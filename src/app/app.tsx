@@ -1,9 +1,10 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { MapPage } from '../pages/map'
 import { Navigation } from '../pages/navigation/navigation'
 import { pages } from './config-pages'
 import { type JSX } from 'react'
 
-import './app.scss'
+import './app.style.scss'
 
 type ConfigRoutes = {
   key: string | number
@@ -27,6 +28,11 @@ function App() {
       key: 1,
       path: pages.navigation.path,
       element: <Navigation />,
+    },
+    {
+      key: 2,
+      path: pages.map.path,
+      element: <MapPage />,
     },
   ]
 
