@@ -25,9 +25,9 @@ export const MapPage = () => {
 
     const wmsLayer = new TileLayer({
       source: new TileWMS({
-        url: 'https://ahocevar.com/geoserver/wms',
+        url: 'https://demo.mapserver.org/cgi-bin/wms?',
         params: {
-          LAYERS: 'topp:states',
+          LAYERS: 'bluemarble',
           TILED: true,
           VERSION: '1.1.1',
           FORMAT: 'image/png',
