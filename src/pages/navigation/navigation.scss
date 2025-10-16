@@ -1,0 +1,17 @@
+.navigation {
+  background-color: rgba(154, 185, 185, 0.2);
+  padding: 30px;
+  height: 100vh;
+}
+
+.navigation__description {
+  font-size: 22px;
+}
+
+.navigation__button {
+  margin: 0.5rem;
+
+  &:hover {
+    color: rgb(34, 190, 34);
+  }
+}
