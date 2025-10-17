@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://github.com/tyt34/openlayers",
+  "homepage": "https://tyt34.github.io/openlayers/",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

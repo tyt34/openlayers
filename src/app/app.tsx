@@ -40,6 +40,16 @@ function App() {
       path: pages.map2.path,
       element: <MapTopographic />,
     },
+    {
+      key: 'not-found',
+      path: '*',
+      element: (
+        <Navigate
+          replace
+          to={pages.navigation.path}
+        />
+      ),
+    },
   ]
 
   return (
