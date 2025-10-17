@@ -1,20 +1,19 @@
+import {
+  CONFIG_BASE_LAYER,
+  CONFIG_VECTOR_LAYER,
+  CONFIG_ZWS_LAYER,
+} from '../../constants/configs'
 import { countryStore } from '../../store/storeCountry'
 import { DialogCountry } from '../../component/dialog-country'
-import { Feature, View } from 'ol'
+import { Feature, MapBrowserEvent, View } from 'ol'
 import { Header } from '../../component/header'
 import { observer } from 'mobx-react-lite'
-import { OSM } from 'ol/source'
 import { useEffect, useRef, useState } from 'react'
-import Fill from 'ol/style/Fill'
-import GeoJSON from 'ol/format/GeoJSON'
 import Map from 'ol/Map'
 import Overlay from 'ol/Overlay'
-import Stroke from 'ol/style/Stroke'
-import Style from 'ol/style/Style'
 import TileLayer from 'ol/layer/Tile'
 import VectorLayer from 'ol/layer/Vector'
-import VectorSource from 'ol/source/Vector'
-import XYZ from 'ol/source/XYZ'
+import { DEFAULT_STYLE, HIGHLIGHT_STYLE } from '../../constants/styles'
 
 export const MapDetail = observer(() => {
   const mapRef = useRef<HTMLDivElement | null>(null)
@@ -27,37 +26,11 @@ export const MapDetail = observer(() => {
       return
     }
 
-    const baseLayer = new TileLayer({
-      source: new OSM(),
-    })
+    const baseLayer = new TileLayer(CONFIG_BASE_LAYER)
 
-    const zwsLayer = new TileLayer({
-      source: new XYZ({
-        url: 'http://zs.zulugis.ru:6473/ws?service=ZWMTS&request=GetTile&layer=world_3857&z={z}&x={x}&y={y}',
-        crossOrigin: 'anonymous',
-      }),
-      opacity: 0.7,
-    })
+    const zwsLayer = new TileLayer(CONFIG_ZWS_LAYER)
 
-    const vectorSource = new VectorSource({
-      url: 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json',
-      format: new GeoJSON(),
-    })
-
-    const defaultStyle = new Style({
-      fill: new Fill({ color: 'rgba(0,0,255,0.1)' }),
-      stroke: new Stroke({ color: '#3399CC', width: 1 }),
-    })
-
-    const highlightStyle = new Style({
-      fill: new Fill({ color: 'rgba(0,255,0,0.3)' }),
-      stroke: new Stroke({ color: '#00FF00', width: 2 }),
-    })
-
-    const vectorLayer = new VectorLayer({
-      source: vectorSource,
-      style: defaultStyle,
-    })
+    const vectorLayer = new VectorLayer(CONFIG_VECTOR_LAYER)
 
     const map = new Map({
       target: mapRef.current,
@@ -79,25 +52,22 @@ export const MapDetail = observer(() => {
     let selectedFeatureLocal: Feature | null = null
 
     const handleMapClick = async (
-      evt: MouseEvent,
-      featureFromDOM?: any,
+      evt: MapBrowserEvent<PointerEvent>,
+      featureFromDOM?: Feature<any> | null,
     ) => {
-      console.log(' --> cl')
-
-      const pixel = map.getEventPixel(evt)
+      const pixel = evt.pixel
 
       const featureAtPixel: Feature | null =
         featureFromDOM ||
         (map.forEachFeatureAtPixel(pixel, (f) => f) as Feature | null)
 
       if (selectedFeatureLocal) {
-        selectedFeatureLocal.setStyle(defaultStyle)
+        selectedFeatureLocal.setStyle(DEFAULT_STYLE)
       }
 
       if (featureAtPixel) {
-        console.log({ featureAtPixel })
         setOpen(true)
-        featureAtPixel.setStyle(highlightStyle)
+        featureAtPixel.setStyle(HIGHLIGHT_STYLE)
         selectedFeatureLocal = featureAtPixel
 
         const props = featureAtPixel.getProperties()
@@ -107,19 +77,20 @@ export const MapDetail = observer(() => {
       } else {
         overlay.setPosition(undefined)
         selectedFeatureLocal = null
-        // setCountryData(null)
         setOpen(false)
       }
     }
 
-    /**
-     * обход проблемы
-     */
-    map.getViewport().addEventListener('click', (evt) => {
-      const rect = map.getViewport().getBoundingClientRect()
-      const pixel = [evt.clientX - rect.left, evt.clientY - rect.top]
-      const feature = map.forEachFeatureAtPixel(pixel, (f) => f)
-      handleMapClick(evt, feature)
+    map.on('click', async (evt) => {
+      const featureAtPixel = map.forEachFeatureAtPixel(
+        evt.pixel,
+        (f) => f,
+      ) as Feature<any> | null
+
+      await handleMapClick(
+        evt as MapBrowserEvent<PointerEvent>,
+        featureAtPixel,
+      )
     })
 
     return () => {

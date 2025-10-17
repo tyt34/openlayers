@@ -1,5 +1,5 @@
+import { CONFIG_BASE_LAYER, WMS_LAYER } from '../../constants/configs'
 import { Header } from '../../component/header'
-import { OSM, TileWMS } from 'ol/source'
 import { useEffect, useRef } from 'react'
 import { View } from 'ol'
 import Map from 'ol/Map'
@@ -13,24 +13,9 @@ export const MapTopographic = () => {
       return
     }
 
-    const baseLayer = new TileLayer({
-      source: new OSM(),
-    })
+    const baseLayer = new TileLayer(CONFIG_BASE_LAYER)
 
-    const wmsLayer = new TileLayer({
-      source: new TileWMS({
-        url: 'https://demo.mapserver.org/cgi-bin/wms?',
-        params: {
-          LAYERS: 'bluemarble',
-          TILED: true,
-          VERSION: '1.1.1',
-          FORMAT: 'image/png',
-        },
-        serverType: 'geoserver',
-        crossOrigin: 'anonymous',
-      }),
-      opacity: 0.6,
-    })
+    const wmsLayer = new TileLayer(WMS_LAYER)
 
     const map = new Map({
       target: mapRef.current,

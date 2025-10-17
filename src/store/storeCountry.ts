@@ -1,3 +1,4 @@
+import { API } from '../api/api'
 import { makeAutoObservable } from 'mobx'
 import axios from 'axios'
 import type { CountryResponse } from '../types/country-response'
@@ -26,7 +27,7 @@ class CountryStore {
 
     try {
       const response = await axios.get<CountryResponse[]>(
-        `https://restcountries.com/v3.1/name/${countryName}`,
+        API.detail(countryName),
         { params: { fullText: true }, timeout: 5000 },
       )
 

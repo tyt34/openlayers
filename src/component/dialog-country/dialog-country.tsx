@@ -1,6 +1,3 @@
-import './dialog-country.style.scss'
-import type { CountryResponse } from '../../types/country-response'
-import type { FC } from 'react'
 import {
   Button,
   Dialog,
@@ -10,6 +7,10 @@ import {
   LinearProgress,
   Typography,
 } from '@mui/material'
+import type { CountryResponse } from '../../types/country-response'
+import type { FC } from 'react'
+
+import './dialog-country.style.scss'
 
 interface Props {
   open: boolean
@@ -37,15 +38,7 @@ export const DialogCountry: FC<Props> = ({
 
       <DialogContent dividers>
         {loading ? (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '10px 0',
-            }}
-          >
+          <div className="center-column">
             <Typography
               variant="body2"
               color="textSecondary"
