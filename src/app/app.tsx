@@ -1,5 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { MapPage } from '../pages/map'
+import { MapDetail } from '../pages/map-detail'
+import { MapTopographic } from '../pages/map-topographic'
 import { Navigation } from '../pages/navigation/navigation'
 import { pages } from './config-pages'
 import { type JSX } from 'react'
@@ -31,8 +32,13 @@ function App() {
     },
     {
       key: 2,
-      path: pages.map.path,
-      element: <MapPage />,
+      path: pages.map1.path,
+      element: <MapDetail />,
+    },
+    {
+      key: 3,
+      path: pages.map2.path,
+      element: <MapTopographic />,
     },
   ]
 

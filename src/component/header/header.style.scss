@@ -1,10 +1,10 @@
-@import '@constants';
+@use '@constants' as c;
 
 .header {
   display: flex;
   align-items: center;
   padding: 1rem;
-  background-color: $green;
+  background-color: c.$green;
   color: white;
   position: sticky;
   top: 0;

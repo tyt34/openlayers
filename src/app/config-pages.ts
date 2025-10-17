@@ -1,14 +1,12 @@
 interface IPage {
   [key: string]: {
     path: string
-    /**
-     * Используется для href
-     */
     pathForWatch: string
   }
 }
 
 export const pages: IPage = {
   navigation: { path: '/navigation', pathForWatch: '#/navigation' },
-  map: { path: '/map/:id', pathForWatch: '#/map/' },
+  map1: { path: '/map/1', pathForWatch: '#/map/1' },
+  map2: { path: '/map/2', pathForWatch: '#/map/2' },
 }

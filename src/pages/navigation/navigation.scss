@@ -1,7 +1,7 @@
-@import '@constants';
+@use '@constants' as c;
 
 .navigation {
-  background-color: rgba(154, 185, 185, 0.2);
+  background-color: c.$soft-gray;
   padding: 30px;
   height: 100vh;
 }
@@ -14,6 +14,12 @@
   margin: 0.5rem;
 
   &:hover {
-    color: $green;
+    color: c.$green;
   }
+}
+
+.navigation__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }

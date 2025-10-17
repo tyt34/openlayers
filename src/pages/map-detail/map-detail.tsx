@@ -22,14 +22,15 @@ import TileLayer from 'ol/layer/Tile'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import XYZ from 'ol/source/XYZ'
+import type { CountryResponse } from './map-detail.types'
 
-import './map.style.scss'
-
-export const MapPage = () => {
+export const MapDetail = () => {
   const mapRef = useRef<HTMLDivElement | null>(null)
   const popupRef = useRef<HTMLDivElement | null>(null)
+
   const [open, setOpen] = useState(false)
-  const [countryData, setCountryData] = useState<any>(null)
+  const [countryData, setCountryData] =
+    useState<CountryResponse | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -48,8 +49,6 @@ export const MapPage = () => {
       }),
       opacity: 0.7,
     })
-    // zwsLayer.setZIndex(0)
-    // zwsLayer.set('interactive', false)
 
     const vectorSource = new VectorSource({
       url: 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json',
@@ -90,7 +89,6 @@ export const MapPage = () => {
 
     let selectedFeatureLocal: Feature | null = null
 
-    // const handleMapClick = async (evt: any) => {
     const handleMapClick = async (
       evt: MouseEvent,
       featureFromDOM?: any,
@@ -116,7 +114,6 @@ export const MapPage = () => {
 
         const props = featureAtPixel.getProperties()
         const countryName = props.name
-        // setSelectedCountryName(countryName)
 
         try {
           const response = await axios.get(
@@ -148,13 +145,8 @@ export const MapPage = () => {
       handleMapClick(evt, feature) // передаем найденную feature
     })
 
-    // map.getViewport().addEventListener('click', handleMapClick)
-
-    // map.on('singleclick', handleMapClick)
-
     return () => {
       map.setTarget(undefined)
-      // map.un('singleclick', handleMapClick)
     }
   }, [])
 
@@ -179,9 +171,7 @@ export const MapPage = () => {
         fullWidth
       >
         <DialogTitle>
-          {countryData?.name?.common ||
-            countryData?.name ||
-            'Неизвестная страна'}
+          {countryData?.name?.common || 'Неизвестная страна'}
         </DialogTitle>
 
         <DialogContent dividers>
