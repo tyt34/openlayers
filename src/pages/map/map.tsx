@@ -1,18 +1,36 @@
-import { useEffect, useRef } from 'react'
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  LinearProgress,
+  Typography,
+} from '@mui/material'
+import { Feature, View } from 'ol'
 import { Header } from '../../component/header'
-import './map.style.scss'
-import TileLayer from 'ol/layer/Tile'
-import { OSM, TileWMS } from 'ol/source'
-import { View } from 'ol'
+import { OSM } from 'ol/source'
+import { useEffect, useRef, useState } from 'react'
+import axios from 'axios'
+import Fill from 'ol/style/Fill'
+import GeoJSON from 'ol/format/GeoJSON'
 import Map from 'ol/Map'
-// import XYZ from 'ol/source/XYZ'
-// import VectorSource from 'ol/source/Vector'
-// import VectorLayer from 'ol/layer/Vector'
-// import axios from 'axios'
-// import GeoJSON from 'ol/format/GeoJSON'
+import Overlay from 'ol/Overlay'
+import Stroke from 'ol/style/Stroke'
+import Style from 'ol/style/Style'
+import TileLayer from 'ol/layer/Tile'
+import VectorLayer from 'ol/layer/Vector'
+import VectorSource from 'ol/source/Vector'
+import XYZ from 'ol/source/XYZ'
+
+import './map.style.scss'
 
 export const MapPage = () => {
   const mapRef = useRef<HTMLDivElement | null>(null)
+  const popupRef = useRef<HTMLDivElement | null>(null)
+  const [open, setOpen] = useState(false)
+  const [countryData, setCountryData] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!mapRef.current) {
@@ -23,65 +41,127 @@ export const MapPage = () => {
       source: new OSM(),
     })
 
-    const wmsLayer = new TileLayer({
-      source: new TileWMS({
-        url: 'https://demo.mapserver.org/cgi-bin/wms?',
-        params: {
-          LAYERS: 'bluemarble',
-          TILED: true,
-          VERSION: '1.1.1',
-          FORMAT: 'image/png',
-        },
-        serverType: 'geoserver',
+    const zwsLayer = new TileLayer({
+      source: new XYZ({
+        url: 'http://zs.zulugis.ru:6473/ws?service=ZWMTS&request=GetTile&layer=world_3857&z={z}&x={x}&y={y}',
         crossOrigin: 'anonymous',
       }),
-      opacity: 0.6, // немного прозрачности, чтобы видеть OSM под ним
+      opacity: 0.7,
+    })
+    // zwsLayer.setZIndex(0)
+    // zwsLayer.set('interactive', false)
+
+    const vectorSource = new VectorSource({
+      url: 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json',
+      format: new GeoJSON(),
     })
 
-    // Vector слой для ZWS
-    // const zwsVectorSource = new VectorSource()
-    // const zwsLayer = new VectorLayer({
-    //   source: zwsVectorSource,
-    // })
+    const defaultStyle = new Style({
+      fill: new Fill({ color: 'rgba(0,0,255,0.1)' }),
+      stroke: new Stroke({ color: '#3399CC', width: 1 }),
+    })
 
-    // ZWS слой через Tile
-    // const zwsLayer = new TileLayer({
-    //   source: new XYZ({
-    //     url: 'http://zs.zulugis.ru:6473/getlayertile/a68b6214-0d80-4747-8616-014f7f5108a9/{z}/{x}/{y}', // пример URL ZWS
-    //     crossOrigin: 'anonymous',
-    //   }),
-    //   opacity: 0.7,
-    // })
+    const highlightStyle = new Style({
+      fill: new Fill({ color: 'rgba(0,255,0,0.3)' }),
+      stroke: new Stroke({ color: '#00FF00', width: 2 }),
+    })
+
+    const vectorLayer = new VectorLayer({
+      source: vectorSource,
+      style: defaultStyle,
+    })
 
     const map = new Map({
       target: mapRef.current,
-      // layers: [
-      //   new TileLayer({
-      //     source: new OSM(), // базовая карта OpenStreetMap
-      //   }),
-      // ],
-      //
-      layers: [baseLayer, wmsLayer],
-      // layers: [baseLayer, wmsLayer, zwsLayer],
+      layers: [baseLayer, zwsLayer, vectorLayer],
       view: new View({
-        center: [0, 0], // координаты в EPSG:3857
+        center: [0, 0],
         zoom: 2,
       }),
     })
 
-    // axios
-    //   .post('http://zs.zulugis.ru:6473/ZuluWeb/GetLayerFeatures', {
-    //     layerId: 'a68b6214-0d80-4747-8616-014f7f5108a9',
-    //     // другие параметры ZWS
-    //   })
-    //   .then((res) => {
-    //     const features = new GeoJSON().readFeatures(res.data)
-    //     zwsVectorSource.addFeatures(features)
-    //   })
-    //   .catch(console.error)
+    const overlay = new Overlay({
+      element: popupRef.current!,
+      autoPan: true,
+      offset: [0, -10],
+    })
 
-    return () => map.setTarget(undefined)
+    map.addOverlay(overlay)
+
+    let selectedFeatureLocal: Feature | null = null
+
+    // const handleMapClick = async (evt: any) => {
+    const handleMapClick = async (
+      evt: MouseEvent,
+      featureFromDOM?: any,
+    ) => {
+      console.log(' --> cl')
+
+      const pixel = map.getEventPixel(evt)
+
+      const featureAtPixel: Feature | null =
+        featureFromDOM ||
+        (map.forEachFeatureAtPixel(pixel, (f) => f) as Feature | null)
+
+      if (selectedFeatureLocal) {
+        selectedFeatureLocal.setStyle(defaultStyle)
+      }
+
+      if (featureAtPixel) {
+        console.log({ featureAtPixel })
+        setOpen(true)
+        setLoading(true)
+        featureAtPixel.setStyle(highlightStyle)
+        selectedFeatureLocal = featureAtPixel
+
+        const props = featureAtPixel.getProperties()
+        const countryName = props.name
+        // setSelectedCountryName(countryName)
+
+        try {
+          const response = await axios.get(
+            `https://restcountries.com/v3.1/name/${countryName}`,
+            { params: { fullText: true }, timeout: 5000 },
+          )
+
+          console.log({ response })
+
+          setCountryData(response.data[0])
+        } catch (e) {
+          console.error(e)
+          setCountryData(null)
+        } finally {
+          setLoading(false)
+        }
+      } else {
+        overlay.setPosition(undefined)
+        selectedFeatureLocal = null
+        setCountryData(null)
+        setOpen(false)
+      }
+    }
+
+    map.getViewport().addEventListener('click', (evt) => {
+      const rect = map.getViewport().getBoundingClientRect()
+      const pixel = [evt.clientX - rect.left, evt.clientY - rect.top] // координаты относительно канваса
+      const feature = map.forEachFeatureAtPixel(pixel, (f) => f)
+      handleMapClick(evt, feature) // передаем найденную feature
+    })
+
+    // map.getViewport().addEventListener('click', handleMapClick)
+
+    // map.on('singleclick', handleMapClick)
+
+    return () => {
+      map.setTarget(undefined)
+      // map.un('singleclick', handleMapClick)
+    }
   }, [])
+
+  const handleClose = () => {
+    setOpen(false)
+    setCountryData(null)
+  }
 
   return (
     <section className="map-page">
@@ -91,6 +171,66 @@ export const MapPage = () => {
         className="map-container"
         ref={mapRef}
       />
+
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {countryData?.name?.common ||
+            countryData?.name ||
+            'Неизвестная страна'}
+        </DialogTitle>
+
+        <DialogContent dividers>
+          {loading ? (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '10px 0',
+              }}
+            >
+              <Typography
+                variant="body2"
+                color="textSecondary"
+              >
+                Загружается информация...
+              </Typography>
+              <LinearProgress sx={{ width: '100%', borderRadius: 1 }} />
+            </div>
+          ) : countryData ? (
+            <>
+              <Typography>
+                Столица: {countryData.capital?.[0] || '—'}
+              </Typography>
+              <Typography>
+                Население:{' '}
+                {countryData.population?.toLocaleString() || '—'}
+              </Typography>
+              <Typography>
+                Валюта:{' '}
+                {countryData.currencies
+                  ? Object.keys(countryData.currencies).join(', ')
+                  : '—'}
+              </Typography>
+              <Typography>
+                Регион: {countryData.region || '—'}
+              </Typography>
+            </>
+          ) : (
+            <Typography>Нет данных</Typography>
+          )}
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={handleClose}>Закрыть</Button>
+        </DialogActions>
+      </Dialog>
     </section>
   )
 }
